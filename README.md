@@ -35,17 +35,44 @@ Both static and media files are stored under `/vol/web/` inside the containers:
 
 ### Verifying Configuration
 
-To verify the static/media configuration is correct:
+Two layers of verification are provided to ensure the static/media setup is correct:
+
+#### 1. Run Django Tests
+
+This verifies settings, URL helpers, staticfiles discovery, and debug mode routing:
 
 ```bash
-# Run Django tests (includes static/media checks)
-docker-compose run --rm app sh -c "python manage.py test"
+docker-compose run --rm app sh -c "python manage.py test core.tests"
+```
 
-# Run the dedicated verification script
+You should see output similar to:
+```
+Ran 11 tests in ...s
+
+OK
+```
+
+#### 2. Run Dedicated Verification Script
+
+This provides a detailed, human-readable report of all checks:
+
+```bash
 docker-compose run --rm app sh -c "python /scripts/verify_static_media.py"
 ```
 
+You should see all checks marked `[PASS]` with a final summary showing `All critical checks passed.`
+
 ### Development
 
-In development mode (`DEBUG=1`), Django serves both static and media files directly.
-Media files are stored in `./data/web/media/` on your local machine.
+In development mode (`DEBUG=1`):
+- Django serves static files via the `staticfiles` app at `/static/`
+- Django serves media files via the URL pattern in `urls.py` at `/media/`
+- Media files are stored in `./data/web/media/` on your local machine
+- Static files are collected to `./data/web/static/` (for reference only)
+
+### Production
+
+In production (deployed via `docker-compose-deploy.yml`):
+- Nginx serves static files directly from the shared volume at `/static/`
+- Nginx serves media files directly from the shared volume at `/media/`
+- Django (via uWSGI) handles all dynamic requests
