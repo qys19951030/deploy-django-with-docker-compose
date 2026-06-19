@@ -35,32 +35,83 @@ Both static and media files are stored under `/vol/web/` inside the containers:
 
 ### Verifying Configuration
 
-Two layers of verification are provided to ensure the static/media setup is correct:
+Two verification entry points are provided. Both work inside Docker and on local machines (no PostgreSQL required).
 
-#### 1. Run Django Tests
+---
 
-This verifies settings, URL helpers, staticfiles discovery, and debug mode routing:
+#### Quick Check: Run Django Test Suite
 
+**What it verifies**: 12 unit tests covering URL configuration, path settings, URL helpers, staticfiles discovery, and debug-mode routing.
+
+**Local machine** (recommended for fast validation):
+```bash
+python scripts/run_tests.py
+```
+
+**Inside Docker container**:
 ```bash
 docker-compose run --rm app sh -c "python manage.py test core.tests"
 ```
 
-You should see output similar to:
+**Expected output**:
 ```
-Ran 11 tests in ...s
+Ran 12 tests in ...s
 
 OK
 ```
 
-#### 2. Run Dedicated Verification Script
+---
 
-This provides a detailed, human-readable report of all checks:
+#### Detailed Report: Run Verification Script
 
+**What it verifies**: 10 detailed checks across 6 categories with human-readable output, including actual generated URLs and discovered file paths.
+
+**Local machine**:
+```bash
+python scripts/verify_static_media.py
+```
+
+**Inside Docker container**:
 ```bash
 docker-compose run --rm app sh -c "python /scripts/verify_static_media.py"
 ```
 
-You should see all checks marked `[PASS]` with a final summary showing `All critical checks passed.`
+**Expected output** (all 10 checks pass):
+```
+============================================================
+Static & Media Configuration Verification
+============================================================
+
+[1/6] Checking URL configurations...
+  [PASS] STATIC_URL = '/static/'
+  [PASS] MEDIA_URL = '/media/'
+
+[2/6] Checking root directory configurations...
+  [PASS] STATIC_ROOT = '/vol/web/static'
+  [PASS] MEDIA_ROOT = '/vol/web/media'
+
+[3/6] Checking URL helpers...
+  [PASS] static('admin/css/base.css') = '/static/admin/css/base.css'
+  [PASS] default_storage.url('test-file.txt') = '/media/test-file.txt'
+
+[4/6] Checking directory structure...
+  [PASS] STATIC_ROOT and MEDIA_ROOT share parent directory: /vol/web
+
+[5/6] Checking staticfiles discovery...
+  [PASS] admin/css/base.css found via staticfiles finders
+         Path: ...
+
+[6/6] Checking debug mode URL routing...
+  [PASS] DEBUG mode MEDIA route regex = '^media/(?P<path>.*)$'
+  [PASS] DEBUG mode STATIC route regex = '^static/(?P<path>.*)$'
+
+============================================================
+Results: 10 passed, 0 failed
+
+All critical checks passed.
+```
+
+---
 
 ### Development
 
